@@ -14,7 +14,7 @@ OBJDIRS = $(sort $(addprefix $(OBJDIR)/,$(dir $(SRC))))
 DEFINES = \
 		  -D__DEBUG__
 LINKS = \
-		-lm -lgpiod -lv4l2
+		-lm -lgpiod -lv4l2 -lpthread
 FLAGS = -g
 
 
