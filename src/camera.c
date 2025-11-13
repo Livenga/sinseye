@@ -19,7 +19,9 @@
 extern int32_t xioctl(int fd, int request, void *arg);
 
 
-static char **find_video_device_paths(size_t *p_count)
+static char **find_video_device_paths(
+        size_t *p_count,
+        const char *search_pattern)
 {
     const char *p_root = "/dev";
 
@@ -33,7 +35,7 @@ static char **find_video_device_paths(size_t *p_count)
     regex_t reg;
     regmatch_t pmatch[1];
     memset((void *)&reg, 0, sizeof(regex_t));
-    int state = regcomp(&reg, "^video[0-9]+$", REG_EXTENDED);
+    int state = regcomp(&reg, ((search_pattern != NULL) ? search_pattern : "^video[0-9]+$"), REG_EXTENDED);
 
     if(state != 0)
     {
@@ -130,10 +132,12 @@ static int8_t is_available_device(const char *path)
  * @param p_count 検出したデバイスの件数を格納するポイント
  * @return 使用可能なデバイス一覧
  */
-char **find_available_devices(size_t *p_count)
+char **find_available_devices(
+        size_t *p_count,
+        const char *search_pattern)
 {
     size_t count = 0;
-    char **detected_device_paths = find_video_device_paths(&count);
+    char **detected_device_paths = find_video_device_paths(&count, search_pattern);
 
 
     char **p_ret = (char **)calloc(count, sizeof(char *));

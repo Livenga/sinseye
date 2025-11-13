@@ -12,7 +12,9 @@
  * @param p_count 検出したデバイスの件数を格納するポイント
  * @return 使用可能なデバイス一覧
  */
-extern char **find_available_devices(size_t *p_count);
+extern char **find_available_devices(
+        size_t *p_count,
+        const char *search_pattern);
 
 
 extern struct camera_t *camera_open(const char *dev);

@@ -84,7 +84,7 @@ int main(
         }
     }
 
-    find_available_devices(NULL);
+    fprintf(stderr, "%s\n", device_path);
 
     if(strlen(device_path) == 0 || ! is_device_available(device_path))
         return -1;
@@ -142,12 +142,12 @@ static uint8_t is_device_available(const char *path)
     if(access(path, F_OK) != 0)
         return 0;
 
-    struct stat stat;
+    struct stat statbuf;
 
-    memset((void *)&stat, 0, sizeof(struct stat));
+    memset((void *)&statbuf, 0, sizeof(struct stat));
 
-    if(lstat(path, &stat) != 0)
+    if(stat(path, &statbuf) != 0)
         return 0;
 
-    return S_ISCHR(stat.st_mode) ? 1 : 0;
+    return S_ISCHR(statbuf.st_mode) ? 1 : 0;
 }
