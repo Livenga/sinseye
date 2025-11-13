@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -8,6 +9,7 @@
 #include <pthread.h>
 #include <linux/videodev2.h>
 #include "../include/camera.h"
+#include "../include/io.h"
 
 
 uint8_t f_verbose = 0;
@@ -46,6 +48,7 @@ int main(
         { "device", required_argument, NULL, 'd' },
         { "info", no_argument, NULL, 'I' },
         { "verbose", no_argument, NULL, 0 },
+        { "help", no_argument, NULL, 'h' },
     };
 
 
@@ -58,7 +61,8 @@ int main(
     snprintf(device_path, 256, "/dev/video0");
 
 
-    while((opt = getopt_long(argc, argv, "d:IV", (const struct option *)opts, NULL)) > 0)
+    int longint;
+    while((opt = getopt_long(argc, argv, "d:IVh", (const struct option *)opts, &longint)) > 0)
     {
         switch(opt)
         {
@@ -74,8 +78,13 @@ int main(
             case 'V':
                 f_verbose = 1;
                 break;
+
+            case 'h':
+                break;
         }
     }
+
+    find_available_devices(NULL);
 
     if(strlen(device_path) == 0 || ! is_device_available(device_path))
         return -1;

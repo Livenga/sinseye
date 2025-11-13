@@ -90,10 +90,11 @@ static void print_v4l2_supported_capabilities(int fd)
     if(ret == -1)
         return;
 
+    fprintf(stderr, "%s, %s, %s\n",
+            cap.card, cap.driver, cap.bus_info);
     struct value_description_t *p_desc = v4l2_capability_descriptions;
 
     fprintf(stderr, "[%s] ===== V4L2 Supported Capabilities =====\n", get_now());
-
     do
     {
         if((cap.capabilities & p_desc->value) > 0)
@@ -101,6 +102,19 @@ static void print_v4l2_supported_capabilities(int fd)
             fprintf(stderr, "\t0x%08lX  %s:\t%s\n", p_desc->value, p_desc->name, p_desc->description);
         }
     } while((++p_desc)->name != NULL);
+    fprintf(stderr, "\n");
+
+
+    fprintf(stderr, "[%s] ===== V4L2 Supported Device Capabilities =====\n", get_now());
+    p_desc = v4l2_capability_descriptions;
+    do
+    {
+        if((cap.device_caps & p_desc->value) > 0)
+        {
+            fprintf(stderr, "\t0x%08lX  %s:\t%s\n", p_desc->value, p_desc->name, p_desc->description);
+        }
+    }
+    while((++p_desc)->name != NULL);
 
     fprintf(stderr, "\n");
 }
@@ -202,6 +216,13 @@ static void print_v4l2_supported_formats(int fd)
 */
 void print_v4l2_description(struct camera_t *p_camera)
 {
+    struct v4l2_dbg_chip_info chip;
+    memset((void *)&chip, 0, sizeof(struct v4l2_dbg_chip_info));
+
+    xioctl(p_camera->fd, VIDIOC_DBG_G_CHIP_INFO, &chip);
+    fprintf(stderr, "%s\n", chip.name);
+
     print_v4l2_supported_capabilities(p_camera->fd);
+
     print_v4l2_supported_formats(p_camera->fd);
 }

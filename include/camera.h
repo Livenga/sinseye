@@ -5,6 +5,16 @@
 #include "camera_type.h"
 
 
+/**
+ * 使用可能なデバイス一覧の取得
+ * /dev/video[0-9]+ の正規表現に一致したデバイスでキャプチャ及びストリーミングを対応し、メタデータキャプチャが非対応のデバイスパスを列挙。
+ *
+ * @param p_count 検出したデバイスの件数を格納するポイント
+ * @return 使用可能なデバイス一覧
+ */
+extern char **find_available_devices(size_t *p_count);
+
+
 extern struct camera_t *camera_open(const char *dev);
 
 

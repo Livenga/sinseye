@@ -5,7 +5,8 @@ SRC =\
 	 src/main.c \
 	 src/camera.c \
 	 src/xioctl.c \
-	 src/v4l2_descriptions.c
+	 src/v4l2_descriptions.c \
+	 src/io.c
 
 
 OBJS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(SRC)))
@@ -14,7 +15,7 @@ OBJDIRS = $(sort $(addprefix $(OBJDIR)/,$(dir $(SRC))))
 DEFINES = \
 		  -D__DEBUG__
 LINKS = \
-		-lm -lgpiod -lv4l2 -lpthread
+		-lc -lm -lgpiod -lv4l2 -lpthread
 FLAGS = -g
 
 

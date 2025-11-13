@@ -3,16 +3,174 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <linux/videodev2.h>
 #include <linux/v4l2-controls.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <regex.h>
+#include "../include/io.h"
 #include "../include/camera_type.h"
 
 
 
 extern int32_t xioctl(int fd, int request, void *arg);
+
+
+static char **find_video_device_paths(size_t *p_count)
+{
+    const char *p_root = "/dev";
+
+    struct dirent *p_dirent = NULL;
+    DIR *p_dir = opendir(p_root);
+    if(p_dir == NULL)
+    {
+        return NULL;
+    }
+
+    regex_t reg;
+    regmatch_t pmatch[1];
+    memset((void *)&reg, 0, sizeof(regex_t));
+    int state = regcomp(&reg, "^video[0-9]+$", REG_EXTENDED);
+
+    if(state != 0)
+    {
+        closedir(p_dir);
+        return NULL;
+    }
+
+
+    size_t cnt = 0;
+    while((p_dirent = readdir(p_dir)) != NULL)
+    {
+        if(*(p_dirent->d_name + 0) == '.')
+            continue;
+
+        state = regexec(&reg, p_dirent->d_name, 1, pmatch, 0);
+        if(state == 0)
+            ++cnt;
+    }
+    closedir(p_dir);
+
+    if(p_count != NULL)
+        *p_count = cnt;
+
+
+    p_dir = opendir(p_root);
+    if(p_dir == NULL)
+    {
+        return NULL;
+    }
+
+    int cursor = 0;
+    char **p_ret = (char **)calloc(cnt, sizeof(char *));
+    if(p_ret == NULL)
+    {
+        closedir(p_dir);
+        return NULL;
+    }
+
+    while((p_dirent = readdir(p_dir)) != NULL)
+    {
+        if(*(p_dirent->d_name + 0) == '.')
+            continue;
+
+        state = regexec(&reg, p_dirent->d_name, 1, pmatch, 0);
+        if(state == 0 && cursor < cnt)
+        {
+            *(p_ret + cursor++) = path_combine(2, '/', p_root, p_dirent->d_name);
+        }
+    }
+
+    closedir(p_dir);
+
+    return p_ret;
+}
+
+
+
+/**
+ */
+static int8_t is_available_device(const char *path)
+{
+    int fd = open(path, O_RDWR);
+    if(fd <= 0)
+        return 0;
+
+    struct v4l2_capability cap;
+    memset((void *)&cap, 0, sizeof(struct v4l2_capability));
+
+    int ret = xioctl(fd, VIDIOC_QUERYCAP, (void *)&cap);
+    if(ret != 0)
+    {
+        close(fd);
+        return 0;
+    }
+
+    close(fd);
+
+    if((cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) > 0 &&
+            (cap.capabilities & V4L2_CAP_STREAMING) > 0 &&
+            (cap.device_caps & V4L2_CAP_META_CAPTURE) == 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+
+
+/**
+ * 使用可能なデバイス一覧の取得
+ * /dev/video[0-9]+ の正規表現に一致したデバイスでキャプチャ及びストリーミングを対応し、メタデータキャプチャが非対応のデバイスパスを列挙。
+ *
+ * @param p_count 検出したデバイスの件数を格納するポイント
+ * @return 使用可能なデバイス一覧
+ */
+char **find_available_devices(size_t *p_count)
+{
+    size_t count = 0;
+    char **detected_device_paths = find_video_device_paths(&count);
+
+
+    char **p_ret = (char **)calloc(count, sizeof(char *));
+
+    size_t cursor = 0;
+    for(int i = 0; i < count; ++i)
+    {
+        char *path = *(detected_device_paths + i);
+        if(path == NULL)
+            continue;
+
+        int8_t is_available = is_available_device(path);
+        if(is_available)
+        {
+            *(p_ret + cursor) = *(detected_device_paths + i);
+            ++cursor;
+        }
+        else
+        {
+            free(*(detected_device_paths + i));
+        }
+    }
+
+    if(p_count != NULL)
+        *p_count = cursor;
+
+    if(cursor != count)
+    {
+        p_ret = realloc(p_ret, cursor);
+    }
+
+    free(detected_device_paths);
+
+    return p_ret;
+}
+
+
 
 
 /**
@@ -51,6 +209,7 @@ not_supported:
 
     return NULL;
 }
+
 
 
 
@@ -214,6 +373,7 @@ void camera_poll(struct camera_t *p_cam)
 
 
 
+
 /**
  */
 int32_t camera_dequeue(struct camera_t *p_cam)
@@ -233,6 +393,7 @@ int32_t camera_dequeue(struct camera_t *p_cam)
 
 
 
+
 int32_t camera_write_buffer(
         struct camera_t *p_cam,
         const char *path)
@@ -244,6 +405,7 @@ int32_t camera_write_buffer(
     close(fd);
     return 0;
 }
+
 
 
 
