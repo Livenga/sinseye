@@ -1,0 +1,4 @@
+# 99-webcam-fix.rules
+
+KERNEL=="video*", SUBSYSTEM=="video4linux", ATTRS{idVendor}=="", ATTRS{idProduct}=="", ATTR{index}=="0", SYMLINK+="", MODE="0660"
+KERNEL=="video*", SUBSYSTEM=="video4linux", ATTRS{idVendor}=="", ATTRS{idProduct}=="", ATTR{index}=="1", SYMLINK+="", MODE="0660"
